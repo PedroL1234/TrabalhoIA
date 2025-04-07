@@ -1,0 +1,120 @@
+# Constantes
+DISTANCE = 0
+PREDECESSOR = 1
+INFINITY = float("inf")
+
+# Representação do grafo (mapa)
+map = {
+    "A": {"C": 3, "B": 4},
+    "B": {"A": 4, "C": 5, "D": 2},
+    "C": {"A": 3, "B": 5, "D": 1, "E": 3},
+    "D": {"B": 2, "C": 1, "E": 4},
+    "E": {"C": 3, "D": 4}
+}
+
+# Função para resetar a tabela de distâncias e predecessores
+def reset_table():
+    return {
+        "A": [0, None],
+        "B": [INFINITY, None],
+        "C": [INFINITY, None],
+        "D": [INFINITY, None],
+        "E": [INFINITY, None],
+    }
+
+# Função que retorna a distância mais curta de um vértice a partir da origem
+def get_shortest_distance(table: dict, vertex: str) -> int:
+    return table[vertex][DISTANCE]
+
+# Função que atualiza a distância mais curta na tabela
+def set_shortest_distance(table: dict, vertex: str, distance: int):
+    table[vertex][DISTANCE] = distance
+
+# Função que atualiza o antecessor na tabela
+def set_predecessor(table: dict, vertex: str, predecessor: str):
+    table[vertex][PREDECESSOR] = predecessor
+
+# Função que retorna a distância entre 2 vértices
+def get_distance(map: dict, first_vertex: str, second_vertex: str) -> int:
+    return map[first_vertex].get(second_vertex, INFINITY)
+
+# Função que retorna o próximo vértice a ser visitado
+def get_next_vertex(table: dict, visited: list) -> str:
+    unvisited = list(set(table.keys()) - set(visited))
+    min_vertex = unvisited[0]
+    min_distance = table[min_vertex][DISTANCE]
+
+    for vertex in unvisited:
+        if table[vertex][DISTANCE] < min_distance:
+            min_vertex = vertex
+            min_distance = table[vertex][DISTANCE]
+
+    return min_vertex
+
+# Função principal que resolve o problema do caminho mais curto
+def find_shortest_path(map: dict, table: dict, origin: str, destination: str):
+    visited = []
+    current = origin
+
+    while len(visited) < len(table):
+        # Verifica se o vértice 'current' está no mapa
+        if current not in map:
+            print(f"Erro: Vértice '{current}' não encontrado no mapa.")
+            break
+
+        adjacent_vertices = map[current]
+        unvisited = set(adjacent_vertices.keys()) - set(visited)
+
+        for vertex in unvisited:
+            distance_from_start = get_shortest_distance(table, vertex)
+            distance_to_current = get_shortest_distance(table, current)
+
+            if distance_from_start == INFINITY and current == origin:
+                total_distance = get_distance(map, current, vertex)
+            else:
+                total_distance = distance_to_current + get_distance(map, current, vertex)
+
+            if total_distance < distance_from_start:
+                set_shortest_distance(table, vertex, total_distance)
+                set_predecessor(table, vertex, current)
+
+        visited.append(current)
+
+        # Se chegarmos no destino, podemos terminar
+        if current == destination:
+            break
+
+        current = get_next_vertex(table, visited)
+
+    return table
+
+# Função para recuperar o caminho
+def reconstruct_path(table: dict, start: str, end: str):
+    path = []
+    current = end
+    while current != start:
+        path.append(current)
+        current = table[current][PREDECESSOR]
+        if current is None: 
+            print(f"Erro: Não foi possível encontrar um caminho de {start} até {end}.")
+            return []
+    path.append(start)
+    path.reverse()
+    return path
+
+# 1. Calcular o caminho de A até C
+table = reset_table() 
+result_A_C = find_shortest_path(map, table, "A", "C")
+path_A_C = reconstruct_path(table, "A", "C")
+print(f"Caminho de A até C: {path_A_C}")
+
+# 2. Calcular o caminho de C até E
+table = reset_table() 
+result_C_E = find_shortest_path(map, table, "C", "E")
+path_C_E = reconstruct_path(table, "C", "E")
+print(f"Caminho de C até E: {path_C_E}")
+
+# Combinar os caminhos
+if path_A_C and path_C_E:
+    total_path = path_A_C + path_C_E[1:] 
+    print(f"Caminho completo de A até E: {total_path}")
